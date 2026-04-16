@@ -6,7 +6,9 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - WHISPER_MODEL=${WHISPER_MODEL:-base}
+      - WHISPER_ASR_URL=${WHISPER_ASR_URL:-http://host.docker.internal:9000}
     volumes:
       - ./downloads:/tmp/downloads
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
