@@ -44,13 +44,29 @@ def get_youtube_transcript(url: str) -> str | None:
             text=True,
             timeout=60,
         )
-        # Parse VTT file
+        # Parse VTT file — strip timing tags and metadata
         import glob
+        import re as _re
         vtt_files = glob.glob(f"/tmp/downloads/{video_id}*.vtt")
         if vtt_files:
             raw = open(vtt_files[0]).read()
-            lines = [l for l in raw.splitlines() if l and not l.startswith("WEBVTT") and "-->" not in l and not l.strip().isdigit()]
-            return " ".join(lines)
+            # Remove timing tags like <00:00:19.039> and <c>
+            raw = _re.sub(r"<[^>]+>", "", raw)
+            lines = [
+                l.strip() for l in raw.splitlines()
+                if l.strip()
+                and not l.startswith("WEBVTT")
+                and not l.startswith("Kind:")
+                and not l.startswith("Language:")
+                and "-->" not in l
+                and not l.strip().isdigit()
+            ]
+            # Deduplicate consecutive identical lines (common in VTT)
+            deduped = [lines[0]] if lines else []
+            for line in lines[1:]:
+                if line != deduped[-1]:
+                    deduped.append(line)
+            return " ".join(deduped)
     except Exception:
         pass
 
